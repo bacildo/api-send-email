@@ -1,31 +1,28 @@
-const express = require("express");
+const serverExpress = require("./server");
 const nodemailer = require("nodemailer");
-require("dotenv").config();
-const moment = require("moment");
-const dataRelatorio = moment().format("DD-MM-YYYY");
+const mailOptions = require("./config");
+const mailInfoConfig = require("./mailInfoConfig");
 
-const app = express();
+const app = serverExpress();
 
-const port = 3003;
-
-const user = process.env.ADDRESS_MAIL;
-const password = process.env.PASSWORD;
-
-app.get("/", (req, res) => res.send());
+app.get("/", (req, res) => res.send("conectado"));
 
 app.get("/send", (req, res) => {
   const transporter = nodemailer.createTransport({
-    host: "",
-    port: "",
-    auth: { user, password },
+    host: mailOptions.host,
+    port: mailOptions.port,
+    secure: mailOptions.secure,
+    auth: mailOptions.auth,
+    tls: mailOptions.tls,
   });
 
   transporter
     .sendMail({
-      from: user,
-      to: user,
-      subject: `Relatórios do Dia${dataRelatorio}`,
-      text: "Olá, segue o resumo detalhado dos eventos diários!",
+      from: mailInfoConfig.from,
+      to: mailInfoConfig.to,
+      subject: mailInfoConfig.subject,
+      text: mailInfoConfig.text,
+      attachments: mailInfoConfig.attachments,
     })
     .then((data) => {
       res.send(data);
@@ -33,6 +30,12 @@ app.get("/send", (req, res) => {
     .catch((error) => {
       res.send(error);
     });
-});
 
-app.listen(port, () => console.log(`Server running on port ${port}`));
+  transporter.verify(function (error) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log("Email sent!");
+    }
+  });
+});
